@@ -1,5 +1,5 @@
 # TailgatingPID
-Experimental velocity control based on a simple PID controller. The line plot illustrates the change in gap distance between the two vehicles in every frame. The following two animations are the simulated experiments.
+Experimental velocity control based on a simple PID controller. The line plot illustrates the change in distance between the two vehicles in every frame. The following two animations are the simulated experiments.
 
 ## The Police Chase
 <div align="center">
