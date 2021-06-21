@@ -5,6 +5,7 @@ import numpy as np
 from velocity_control import velocity_control
 from scipy import signal
 from matplotlib.animation import FuncAnimation
+from libs.pid_controller import pid_control
 from libs.stanley_controller import PathTracker
 from libs.car_description import Description
 from libs.kinematic_model import KinematicBicycleModel
@@ -51,10 +52,7 @@ class TargetCar:
         self.px = path_params.px
         self.py = path_params.py
         self.pyaw = path_params.pyaw
-        self.k = 10.0
-        self.ksoft = 10.0
-        self.xtrackerr = None
-        self.target_id = None
+        self.prev_delta = 0.0
 
         # Description parameters
         self.length = 4.5
@@ -66,11 +64,10 @@ class TargetCar:
 
     def drive(self):
         
-        self.tracker = PathTracker(self.k, self.ksoft, self.max_steer, self.L, self.throttle, self.x, self.y, self.yaw, self.px, self.py, self.pyaw)
-        self.throttle, self.delta = self.tracker.stanley_control()
+        self.delta = pid_control(self.delta, self.max_steer, self.L, self.x, self.y, self.yaw, self.px, self.py, self.pyaw, self.prev_delta, self.dt)
         self.kbm = KinematicBicycleModel(self.x, self.y, self.yaw, self.v, self.throttle, self.delta, self.L, self.max_steer, self.dt)
         self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model()
-
+        self.prev_delta = self.delta
 class Car:
 
     def __init__(self, init_x, init_y, init_yaw, sim_params, path_params):
@@ -158,8 +155,8 @@ def main():
     rl_t, = ax[0].plot([], [], color=target_color)
     rear_axle_t, = ax[0].plot(car.x, car.y, '+', color='black', markersize=2)
 
-    # target_vel = (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1) *20
-    target_vel = np.flip(signal.sawtooth(2*np.pi*5*path.px, 0.5))*20
+    target_vel = (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1) *20
+    # target_vel = np.flip(signal.sawtooth(2*np.pi*5*path.px, 0.5))*20
 
     ax[1].axhline(car.safety_thresh, color='red')
     gap_data, = ax[1].plot([], [])
@@ -216,7 +213,7 @@ def main():
         return outline, fr, rr, fl, rl, rear_axle, outline_t, fr_t, rr_t, fl_t, rl_t, rear_axle_t, gap_data,
 
     anim = FuncAnimation(fig, animate, frames=sim.frames, interval=interval, repeat=sim.loop)
-    anim.save('animation.gif', writer='imagemagick', fps=50)
+    # anim.save('animation.gif', writer='imagemagick', fps=50)
     plt.show()
 
 if __name__ == '__main__':
