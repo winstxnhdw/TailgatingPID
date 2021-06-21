@@ -1,3 +1,5 @@
+import numpy as np
+
 class VelocityController:
 
     def __init__(self):
@@ -11,9 +13,9 @@ class VelocityController:
         :return desired_accel:    (float) vehicle's desired velocity [m/s]
         '''
 
-        self.Kp = 1
-        self.Ki = 0
-        self.Kd = 0
+        self.Kp = 30
+        self.Ki = 1
+        self.Kd = 25
 
     def proportional_control(self, error):
         
@@ -38,12 +40,13 @@ def velocity_control(v, gap, prev_gap, safety_thresh, dt):
     mv_i = controller.integral_control(err, dt)
     mv_d = controller.derivative_control(err, prev_err, dt)
 
-    desired_accel = v + mv_p + mv_i + mv_d
-
-    if desired_accel < 0:
-        desired_accel = 0
+    desired_accel = np.clip(v + mv_p + mv_i + mv_d, -30.0, 30.0)
 
     print("Desired throttle: {} m/s^2".format(desired_accel))
+    print("Error: {} m".format(err))
+    print("Proportional control: {} m/s^2".format(mv_p))
+    print("Integral control: {} m/s^2".format(mv_i))
+    print("Derivative control: {} m/s^2".format(mv_d))
 
     return desired_accel
 

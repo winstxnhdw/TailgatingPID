@@ -5,7 +5,7 @@ from libs.normalise_angle import normalise_angle
 
 class KinematicBicycleModel():
 
-    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, throttle=0.0, delta=0.0, L=1.0, max_steer=0.7, dt=0.05, c_r=0.0, c_a=0.0):
+    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, throttle=0.0, delta=0.0, L=1.0, max_steer=0.7, dt=0.05):
         """
         2D Kinematic Bicycle Model
         :param x:           (float) vehicle's x-coordinate [m]
@@ -16,9 +16,8 @@ class KinematicBicycleModel():
         :param delta:       (float) vehicle's steering angle [rad]
         :param L:           (float) vehicle's wheelbase [m]
         :param max_steer:   (float) vehicle's steering limits [rad]
-        :param c_r:         (float) vehicle's aerodynamic coefficient
-        :param c_a:         (float) vehicle's coefficient of resistance
         :param dt:          (float) discrete time period [s]
+        
         :return x:          (float) vehicle's x-coordinate [m]
         :return y:          (float) vehicle's y-coordinate [m]
         :return yaw:        (float) vehicle's heading [rad]
@@ -40,14 +39,9 @@ class KinematicBicycleModel():
         self.L = L
         self.max_steer = max_steer
 
-        self.c_r = c_r
-        self.c_a = c_a
-
     def kinematic_model(self):
 
-        # Compute the local velocity in the x-axis
-        f_load = (self.c_r + self.c_a) * self.v
-        self.v += self.dt * (self.throttle - f_load)
+        self.v += self.dt * self.throttle
 
         # Compute radius and angular velocity of the kinematic bicycle model
         self.delta = np.clip(self.delta, -self.max_steer, self.max_steer)
