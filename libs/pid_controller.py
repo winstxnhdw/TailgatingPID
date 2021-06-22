@@ -6,9 +6,9 @@ class PIDTracker:
 
     def __init__(self):
         
-        self.Kp = 1
-        self.Ki = 1
-        self.Kd = 1
+        self.Kp = 0.01
+        self.Ki = 0.01
+        self.Kd = 0.01
 
     def target_index_calculator(self, x, y, yaw, path_x, path_y, path_yaw, wheelbase):
 
