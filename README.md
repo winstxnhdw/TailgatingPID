@@ -2,14 +2,14 @@
 Experimental velocity control based on a simple PID controller. The line plot illustrates the change in distance between the two vehicles in every frame. The following two animations are the simulated experiments.
 
 ```yaml
-:param accel:           (float) vehicle's current velocity [m/s]
-:param max_accel:       (float) vehicle's maximum accleration [m/s^2]
-:param gap:             (float) vehicle's vehicle from the target [m]
-:param prev_gap:        (float) previous vehicle's distance from the target [m]
-:param safety_thresh:   (float) maximum allowable distance from the target [m]
-:param dt:              (float) discrete time period [s]
+:param accel:               (float) vehicle's current velocity [m/s]
+:param max_accel:           (float) vehicle's maximum accleration [m/s^2]
+:param gap:                 (float) vehicle's vehicle from the target [m]
+:param prev_gap:            (float) previous vehicle's distance from the target [m]
+:param safety_thresh:       (float) maximum allowable distance from the target [m]
+:param dt:                  (float) discrete time period [s]
 
-:return desired_accel:    (float) vehicle's desired velocity [m/s]
+:return desired_accel:      (float) vehicle's desired velocity [m/s]
 ```
 ## Installation
 > To run the animation, if not just install Numpy.
