@@ -102,6 +102,7 @@ class Car:
         self.tread = 0.7
 
         # Velocity control parameters
+        self.max_accel = 30.0
         self.gap = 0.0
         self.prev_gap = 0.0
         self.safety_thresh = 10.0
@@ -109,7 +110,7 @@ class Car:
     def drive(self, target_x, target_y):
         
         self.gap = np.sqrt((target_x - self.x)**2 + (target_y - self.y)**2)
-        self.throttle = velocity_control(self.throttle, self.gap, self.prev_gap, self.safety_thresh, self.dt)
+        self.throttle = velocity_control(self.throttle, self.max_accel, self.gap, self.prev_gap, self.safety_thresh, self.dt)
         self.tracker = PathTracker(self.k, self.ksoft, self.max_steer, self.L, self.throttle, self.x, self.y, self.yaw, self.px, self.py, self.pyaw)
         self.throttle, self.delta = self.tracker.stanley_control()
         self.kbm = KinematicBicycleModel(self.x, self.y, self.yaw, self.v, self.throttle, self.delta, self.L, self.max_steer, self.dt)

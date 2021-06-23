@@ -5,6 +5,7 @@ class VelocityController:
     def __init__(self):
         '''
         :param accel:           (float) vehicle's current velocity [m/s]
+        :param max_accel:       (float) vehicle's maximum accleration [m/s^2]
         :param gap:             (float) vehicle's vehicle from the target [m]
         :param prev_gap:        (float) previous vehicle's distance from the target [m]
         :param safety_thresh:   (float) maximum allowable distance from the target [m]
@@ -29,7 +30,7 @@ class VelocityController:
         
         return self.Kd * (error - previous_error)/dt
 
-def velocity_control(accel, gap, prev_gap, safety_thresh, dt):
+def velocity_control(accel, max_accel, gap, prev_gap, safety_thresh, dt):
 
     controller = VelocityController()
 
@@ -40,7 +41,7 @@ def velocity_control(accel, gap, prev_gap, safety_thresh, dt):
     mv_i = controller.integral_control(err, dt)
     mv_d = controller.derivative_control(err, prev_err, dt)
 
-    desired_accel = np.clip(accel + mv_p + mv_i + mv_d, -30.0, 30.0)
+    desired_accel = np.clip(accel + mv_p + mv_i + mv_d, -max_accel, max_accel)
 
     print("Desired throttle: {} m/s^2".format(desired_accel))
     print("Error: {} m".format(err))
