@@ -39,11 +39,7 @@ class PathTracker:
         target_idx = np.argmin(d) # Find the shortest distance in the array
 
         # Cross track error, project RMS error onto the front axle vector
-        if self.yaw == 0:
-            front_axle_vec = [0, -1.0]
-        
-        else:
-            front_axle_vec = [-np.cos(self.yaw + np.pi/2), -np.sin(self.yaw + np.pi/2)]
+        front_axle_vec = [np.sin(self.yaw), -np.cos(self.yaw)]
 
         crosstrack_error = np.dot([dx[target_idx], dy[target_idx]], front_axle_vec)
 
