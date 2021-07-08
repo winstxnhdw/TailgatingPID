@@ -61,6 +61,7 @@ class Car:
 class TargetCar(Car):
 
     def __init__(self, init_x, init_y, init_yaw, sim_params, path_params):
+        
         super().__init__(init_x, init_y, init_yaw, sim_params, path_params)
 
         # Tracker parameters
@@ -77,6 +78,7 @@ class TargetCar(Car):
 class TailgatingCar(Car):
 
     def __init__(self, init_x, init_y, init_yaw, sim_params, path_params):
+        
         super().__init__(init_x, init_y, init_yaw, sim_params, path_params)
 
         # Tracker parameters
