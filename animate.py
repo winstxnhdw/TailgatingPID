@@ -157,6 +157,7 @@ def main():
     frames = []
 
     def animate(frame):
+        
         # Camera tracks car
         ax[0].set_xlim(tailgate.x - sim.map_size, tailgate.x + sim.map_size)
         ax[0].set_ylim(-4, 4)
