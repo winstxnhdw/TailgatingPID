@@ -2,7 +2,7 @@ import numpy as np
 
 class VelocityController:
 
-    def __init__(self):
+    def __init__(self, Kp=30, Ki=1, Kd= 25):
         '''
         :param accel:               (float) vehicle's current velocity [m/s]
         :param max_accel:           (float) vehicle's maximum accleration [m/s^2]
@@ -14,9 +14,9 @@ class VelocityController:
         :return desired_accel:      (float) vehicle's desired velocity [m/s]
         '''
 
-        self.Kp = 30
-        self.Ki = 1
-        self.Kd = 25
+        self.Kp = Kp
+        self.Ki = Ki
+        self.Kd = Kd
 
     def proportional_control(self, error):
         

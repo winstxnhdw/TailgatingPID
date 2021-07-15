@@ -202,7 +202,7 @@ def main():
 
         return outline, fr, rr, fl, rl, rear_axle, outline_t, fr_t, rr_t, fl_t, rl_t, rear_axle_t, gap_data,
 
-    anim = FuncAnimation(fig, animate, frames=sim.frames, interval=interval, repeat=sim.loop)
+    _ = FuncAnimation(fig, animate, frames=sim.frames, interval=interval, repeat=sim.loop)
     # anim.save('animation.gif', writer='imagemagick', fps=50)
     plt.show()
 
