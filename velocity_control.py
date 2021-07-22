@@ -2,7 +2,7 @@ import numpy as np
 
 class VelocityController:
 
-    def __init__(self, Kp=30, Ki=1, Kd= 25):
+    def __init__(self, Kp=30, Ki=1, Kd=25):
         '''
         :param accel:               (float) vehicle's current velocity [m/s]
         :param max_accel:           (float) vehicle's maximum accleration [m/s^2]
