@@ -5,18 +5,22 @@ from libs.normalise_angle import normalise_angle
 
 class KinematicBicycleModel():
 
-    def __init__(self, x=0.0, y=0.0, yaw=0.0, v=0.0, throttle=0.0, delta=0.0, L=1.0, max_steer=0.7, dt=0.05):
+    def __init__(self, L=1.0, max_steer=0.7, dt=0.05):
         """
         2D Kinematic Bicycle Model
+
+        At initialisation
+        :param L:           (float) vehicle's wheelbase [m]
+        :param max_steer:   (float) vehicle's steering limits [rad]
+        :param dt:          (float) discrete time period [s]
+
+        At every time step
         :param x:           (float) vehicle's x-coordinate [m]
         :param y:           (float) vehicle's y-coordinate [m]
         :param yaw:         (float) vehicle's heading [rad]
         :param v:           (float) vehicle's velocity in the x-axis [m/s]
         :param throttle:    (float) vehicle's accleration [m/s^2]
         :param delta:       (float) vehicle's steering angle [rad]
-        :param L:           (float) vehicle's wheelbase [m]
-        :param max_steer:   (float) vehicle's steering limits [rad]
-        :param dt:          (float) discrete time period [s]
         
         :return x:          (float) vehicle's x-coordinate [m]
         :return y:          (float) vehicle's y-coordinate [m]
@@ -26,44 +30,29 @@ class KinematicBicycleModel():
         :return omega:      (float) vehicle's angular velocity [rad/s]
         """
 
-        self.x = x
-        self.y = y
-        self.yaw = yaw
-        self.v = v
-
-        self.throttle = throttle
-        self.delta = delta
-
         self.dt = dt
-        
         self.L = L
         self.max_steer = max_steer
 
-    def kinematic_model(self):
+    def kinematic_model(self, x, y, yaw, v, throttle, delta):
 
-        self.v += self.dt * self.throttle
+        v += self.dt * throttle
 
         # Compute radius and angular velocity of the kinematic bicycle model
-        self.delta = np.clip(self.delta, -self.max_steer, self.max_steer)
-
-        if self.delta == 0.0:
-            omega = 0.0
-
-        else:
-            R = self.L / np.tan(self.delta)
-            omega = self.v / R
+        delta = np.clip(delta, -self.max_steer, self.max_steer)
 
         # Compute the state change rate
-        x_dot = self.v * np.cos(self.yaw)
-        y_dot = self.v * np.sin(self.yaw)
+        x_dot = v * np.cos(yaw)
+        y_dot = v * np.sin(yaw)
+        omega = v * np.tan(delta) / self.L
 
         # Compute the final state using the discrete time model
-        self.x += x_dot * self.dt
-        self.y += y_dot * self.dt
-        self.yaw += omega * self.dt
-        self.yaw = normalise_angle(self.yaw)
+        x += x_dot * self.dt
+        y += y_dot * self.dt
+        yaw += omega * self.dt
+        yaw = normalise_angle(yaw)
         
-        return self.x, self.y, self.yaw, self.v, self.delta, omega
+        return x, y, yaw, v, delta, omega
 
 def main():
 

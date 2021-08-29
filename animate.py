@@ -5,10 +5,10 @@ import numpy as np
 from velocity_control import velocity_control
 from scipy import signal
 from matplotlib.animation import FuncAnimation
-from libs.stanley_controller import PathTracker
+from libs.stanley_controller import StanleyController
 from libs.car_description import Description
 from libs.kinematic_model import KinematicBicycleModel
-from libs.pid_controller import pid_control
+from libs.pid_controller import PIDTracker
 
 class Simulation:
 
@@ -66,12 +66,14 @@ class TargetCar(Car):
 
         # Tracker parameters
         self.prev_delta = 0.0
+        
+        self.kbm = KinematicBicycleModel(self.L, self.max_steer, self.dt)
+        self.pid = PIDTracker(self.L, self.max_steer, self.dt)
 
     def drive(self):
         
         self.delta = pid_control(self.delta, self.max_steer, self.L, self.x, self.y, self.yaw, self.px, self.py, self.pyaw, self.prev_delta, self.dt)
-        self.kbm = KinematicBicycleModel(self.x, self.y, self.yaw, self.v, self.throttle, self.delta, self.L, self.max_steer, self.dt)
-        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model()
+        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.v, self.throttle, self.delta)
 
         self.prev_delta = self.delta
 
@@ -91,17 +93,18 @@ class TailgatingCar(Car):
         self.prev_gap = 0.0
         self.safety_thresh = 10.0
 
+        self.kbm = KinematicBicycleModel(self.L, self.max_steer, self.dt)
+        self.tracker = StanleyController(self.k, self.ksoft, 0.0, 0.0, self.max_steer, self.L, self.px, self.py, self.pyaw)
+
     def drive(self, target_x, target_y):
         
         os.system('cls' if os.name=='nt' else 'clear')
 
-        self.gap = np.sqrt((target_x - self.x)**2 + (target_y - self.y)**2)
+        self.gap = np.hypot(target_x - self.x, target_y - self.y)
 
         self.throttle = velocity_control(self.throttle, self.max_accel, self.gap, self.prev_gap, self.safety_thresh, self.dt)
-        self.tracker = PathTracker(self.k, self.ksoft, self.max_steer, self.L, self.throttle, self.x, self.y, self.yaw, self.px, self.py, self.pyaw)
-        self.throttle, self.delta = self.tracker.stanley_control()
-        self.kbm = KinematicBicycleModel(self.x, self.y, self.yaw, self.v, self.throttle, self.delta, self.L, self.max_steer, self.dt)
-        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model()
+        self.delta = self.tracker.stanley_control(self.x, self.y, self.yaw, self.v, self.delta)
+        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.v, self.throttle, self.delta)
 
         self.prev_gap = self.gap
 
@@ -146,7 +149,7 @@ def main():
     rear_axle_t, = ax[0].plot(tailgate.x, tailgate.y, '+', color='black', markersize=2)
 
     # Behaviour settings
-    target_vel = (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1) *20
+    target_vel = (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1) * 20
     # target_vel = np.flip(signal.sawtooth(2*np.pi*5*path.px, 0.5))*20
 
     # Graph settings

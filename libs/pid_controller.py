@@ -4,23 +4,27 @@ from libs.normalise_angle import normalise_angle
 
 class PIDTracker:
 
-    def __init__(self):
+    def __init__(self, wheelbase, steering_limits, dt):
+
+        self.steering_limits = steering_limits
+        self.wheelbase = wheelbase
+        self.dt = dt
         
         self.Kp = 0.01
         self.Ki = 0.01
         self.Kd = 0.01
 
-    def target_index_calculator(self, x, y, yaw, path_x, path_y, path_yaw, wheelbase):
+    def target_index_calculator(self, x, y, yaw, path_x, path_y, path_yaw):
 
         # Calculate position of the front axle
-        fx = x + wheelbase * np.cos(yaw)
-        fy = y + wheelbase * np.sin(yaw)
+        fx = x + self.wheelbase * np.cos(yaw)
+        fy = y + self.wheelbase * np.sin(yaw)
 
         dx = [fx - icx for icx in path_x] # Find the x-axis of the front axle relative to the path
         dy = [fy - icy for icy in path_y] # Find the y-axis of the front axle relative to the path
 
-        d = np.hypot(dx, dy) # Find the distance from the front axle to the path
-        target_idx = np.argmin(d) # Find the shortest distance in the array
+        d = np.hypot(dx, dy)       # Find the distance from the front axle to the path
+        target_idx = np.argmin(d)  # Find the shortest distance in the array
 
         # Heading error
         heading_term = normalise_angle(path_yaw[target_idx] - yaw)
@@ -31,31 +35,31 @@ class PIDTracker:
         
         return self.Kp * error
 
-    def integral_control(self, error, dt):
+    def integral_control(self, error):
         
-        return self.Ki * error * dt
+        return self.Ki * error * self.dt
 
-    def derivative_control(self, error, previous_error, dt):
+    def derivative_control(self, error, previous_error):
         
-        return self.Kd * (error - previous_error)/dt
+        return self.Kd * (error - previous_error)/self.dt
 
-def pid_control(delta, steering_limits, wheelbase, x, y, yaw, path_x, path_y, path_yaw, prev_heading, dt):
+def pid_control(delta, x, y, yaw, path_x, path_y, path_yaw, prev_heading):
         
     tracker = PIDTracker()
 
-    heading_term = tracker.target_index_calculator(x, y, yaw, path_x, path_y, path_yaw, wheelbase)
+    heading_term = tracker.target_index_calculator(x, y, yaw, path_x, path_y, path_yaw)
 
     mv_p = tracker.proportional_control(heading_term)
-    mv_i = tracker.integral_control(heading_term, dt)
-    mv_d = tracker.derivative_control(heading_term, prev_heading, dt)
+    mv_i = tracker.integral_control(heading_term)
+    mv_d = tracker.derivative_control(heading_term, prev_heading)
 
     sigma = delta + mv_p + mv_i + mv_d
 
-    if sigma >= steering_limits:
-            sigma = steering_limits
+    if sigma >= self.steering_limits:
+            sigma = self.steering_limits
 
-    elif sigma <= -steering_limits:
-        sigma = -steering_limits
+    elif sigma <= -self.steering_limits:
+        sigma = -self.steering_limits
 
     return sigma
 
