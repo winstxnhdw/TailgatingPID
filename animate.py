@@ -187,11 +187,11 @@ def main():
         rear_axle_t.set_data(target.x, target.y)
 
         # Annotate gap between cars above car
-        annotation_tailgate.set_text('Gap: {} m'.format(np.around(tailgate.gap, 2)))
+        annotation_tailgate.set_text(f"Gap: {tailgate.gap:.2f} m")
         annotation_tailgate.set_position((tailgate.x, tailgate.y + 3))
 
         # Annotate velocity of target
-        annotation_target.set_text('Velocity: {} m/s'.format(np.around(target.v, 2)))
+        annotation_target.set_text(f"Velocity: {target.v:.2f} m/s")
         annotation_target.set_position((target.x, target.y + 3))
 
         # Animate graph
@@ -200,8 +200,8 @@ def main():
         ax[1].set_ylim(gap_arr[-1] - sim.map_size, gap_arr[-1] + sim.map_size)
         gap_data.set_data(frames, gap_arr)
 
-        ax[0].set_title('{}s'.format(np.around(sim.dt * frame, 2)), loc='right')
-        ax[0].set_xlabel('Speed: {} m/s'.format(np.around(tailgate.v, 2)), loc='left')
+        ax[0].set_title(f'{sim.dt*frame:.2f}s', loc='right')
+        ax[0].set_xlabel(f'Speed: {tailgate.v:.2f} m/s', loc='left')
 
         return outline, fr, rr, fl, rl, rear_axle, outline_t, fr_t, rr_t, fl_t, rl_t, rear_axle_t, gap_data,
 
