@@ -26,8 +26,8 @@ class Path:
     def __init__(self):
 
         self.px = np.linspace(0, 1500, num=1500)
-        self.py = [0 for i in range(1500)]
-        self.pyaw = [0 for i in range(1500)]
+        self.py = [0] * 1500
+        self.pyaw = [0] * 1500
 
 class Car:
     
@@ -37,11 +37,11 @@ class Car:
         self.x = init_x
         self.y = init_y 
         self.yaw = init_yaw
-        self.v = 0.0
+        self.velocity = 0.0
         self.throttle = 0.0
         self.delta = 0.0
         self.omega = 0.0
-        self.L = 2.5
+        self.wheelbase = 2.96
         self.max_steer = np.deg2rad(33)
         self.dt = sim_params.dt
 
@@ -51,12 +51,14 @@ class Car:
         self.pyaw = path_params.pyaw
 
         # Description parameters
-        self.length = 4.5
-        self.width = 2.0
-        self.rear2wheel = 1.0
-        self.wheel_dia = 0.15 * 2
-        self.wheel_width = 0.2
-        self.tread = 0.7
+        self.overall_length = 4.97
+        self.overall_width = 1.964
+        self.tyre_diameter = 0.4826
+        self.tyre_width = 0.2032
+        self.axle_track = 1.662
+        self.rear_overhang = (self.overall_length - self.wheelbase) / 2
+
+        self.kbm = KinematicBicycleModel(self.wheelbase, self.max_steer, self.dt)
 
 class TargetCar(Car):
 
@@ -67,14 +69,15 @@ class TargetCar(Car):
         # Tracker parameters
         self.prev_delta = 0.0
         
-        self.kbm = KinematicBicycleModel(self.L, self.max_steer, self.dt)
-        self.pid = PIDTracker(self.L, self.max_steer, self.dt)
+        # Description parameters
+        self.colour = 'red'
+
+        self.pid = PIDTracker(self.wheelbase, self.max_steer, self.dt)
 
     def drive(self):
         
-        self.delta = pid_control(self.delta, self.max_steer, self.L, self.x, self.y, self.yaw, self.px, self.py, self.pyaw, self.prev_delta, self.dt)
-        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.v, self.throttle, self.delta)
-
+        self.delta = self.pid.heading_control(self.delta, self.x, self.y, self.yaw, self.px, self.py, self.pyaw, self.prev_delta)
+        self.x, self.y, self.yaw, self.velocity, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.velocity, self.throttle, self.delta)
         self.prev_delta = self.delta
 
 class TailgatingCar(Car):
@@ -93,8 +96,10 @@ class TailgatingCar(Car):
         self.prev_gap = 0.0
         self.safety_thresh = 10.0
 
-        self.kbm = KinematicBicycleModel(self.L, self.max_steer, self.dt)
-        self.tracker = StanleyController(self.k, self.ksoft, 0.0, 0.0, self.max_steer, self.L, self.px, self.py, self.pyaw)
+        # Description parameters
+        self.colour = 'green'
+
+        self.tracker = StanleyController(self.k, self.ksoft, 0.0, 0.0, self.max_steer, self.wheelbase, self.px, self.py, self.pyaw)
 
     def drive(self, target_x, target_y):
         
@@ -103,8 +108,8 @@ class TailgatingCar(Car):
         self.gap = np.hypot(target_x - self.x, target_y - self.y)
 
         self.throttle = velocity_control(self.throttle, self.max_accel, self.gap, self.prev_gap, self.safety_thresh, self.dt)
-        self.delta = self.tracker.stanley_control(self.x, self.y, self.yaw, self.v, self.delta)
-        self.x, self.y, self.yaw, self.v, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.v, self.throttle, self.delta)
+        self.delta = self.tracker.stanley_control(self.x, self.y, self.yaw, self.velocity, self.delta)
+        self.x, self.y, self.yaw, self.velocity, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.velocity, self.throttle, self.delta)
 
         self.prev_gap = self.gap
 
@@ -115,8 +120,8 @@ def main():
 
     tailgate = TailgatingCar(path.px[0], path.py[0], path.pyaw[0], sim, path)
     target = TargetCar(30, path.py[0], path.pyaw[0], sim, path)
-    car_desc = Description(tailgate.length, tailgate.width, tailgate.rear2wheel, tailgate.wheel_dia, tailgate.wheel_width, tailgate.tread, tailgate.L)
-    target_desc = Description(target.length, target.width, target.rear2wheel, target.wheel_dia, target.wheel_width, target.tread, target.L)
+    car_desc = Description(tailgate.overall_length, tailgate.overall_width, tailgate.rear_overhang, tailgate.tyre_diameter, tailgate.tyre_width, tailgate.axle_track, tailgate.wheelbase)
+    target_desc = Description(target.overall_length, target.overall_width, target.rear_overhang, target.tyre_diameter, target.tyre_width, target.axle_track, target.wheelbase)
 
     interval = sim.dt * 10**3
 
@@ -129,8 +134,8 @@ def main():
     ax[1].grid()
 
     # Tailgate settings
-    annotation_tailgate = ax[0].annotate('{}'.format(np.around(tailgate.gap, 2)), xy=(tailgate.x, tailgate.y + 5), color='black', annotation_clip=False)
-    tailgate_color = 'green'
+    annotation_tailgate = ax[0].annotate(f'{tailgate.gap:.2f}', xy=(tailgate.x, tailgate.y + 5), color='black', annotation_clip=False)
+    tailgate_color = tailgate.colour
     outline, = ax[0].plot([], [], color=tailgate_color)
     fr, = ax[0].plot([], [], color=tailgate_color)
     rr, = ax[0].plot([], [], color=tailgate_color)
@@ -139,8 +144,8 @@ def main():
     rear_axle, = ax[0].plot(tailgate.x, tailgate.y, '+', color='black', markersize=2)
 
     # Target settings
-    annotation_target = ax[0].annotate('{}'.format(np.around(target.v, 2)), xy=(target.x, target.y + 5), color='black', annotation_clip=False)
-    target_color = 'red'
+    annotation_target = ax[0].annotate(f'{target.velocity:.2f}', xy=(target.x, target.y + 5), color='black', annotation_clip=False)
+    target_color = target.colour
     outline_t, = ax[0].plot([], [], color=target_color)
     fr_t, = ax[0].plot([], [], color=target_color)
     rr_t, = ax[0].plot([], [], color=target_color)
@@ -176,7 +181,7 @@ def main():
         rear_axle.set_data(tailgate.x, tailgate.y)
 
         # Drive and draw target car
-        target.v = target_vel[frame]
+        target.velocity = target_vel[frame]
         target.drive()
         outline_plot_t, fr_plot_t, rr_plot_t, fl_plot_t, rl_plot_t = target_desc.plot_car(target.x, target.y, target.yaw, target.delta)
         outline_t.set_data(outline_plot_t[0], outline_plot_t[1])
@@ -191,7 +196,7 @@ def main():
         annotation_tailgate.set_position((tailgate.x, tailgate.y + 3))
 
         # Annotate velocity of target
-        annotation_target.set_text(f"Velocity: {target.v:.2f} m/s")
+        annotation_target.set_text(f"Velocity: {target.velocity:.2f} m/s")
         annotation_target.set_position((target.x, target.y + 3))
 
         # Animate graph
@@ -201,12 +206,13 @@ def main():
         gap_data.set_data(frames, gap_arr)
 
         ax[0].set_title(f'{sim.dt*frame:.2f}s', loc='right')
-        ax[0].set_xlabel(f'Speed: {tailgate.v:.2f} m/s', loc='left')
+        ax[0].set_xlabel(f'Speed: {tailgate.velocity:.2f} m/s', loc='left')
 
         return outline, fr, rr, fl, rl, rear_axle, outline_t, fr_t, rr_t, fl_t, rl_t, rear_axle_t, gap_data,
 
     _ = FuncAnimation(fig, animate, frames=sim.frames, interval=interval, repeat=sim.loop)
     # anim.save('animation.gif', writer='imagemagick', fps=50)
+
     plt.show()
 
 if __name__ == '__main__':

@@ -43,11 +43,11 @@ def velocity_control(accel, max_accel, gap, prev_gap, safety_thresh, dt):
 
     desired_accel = np.clip(accel + mv_p + mv_i + mv_d, -max_accel, max_accel)
 
-    print("Desired throttle: {} m/s^2".format(desired_accel))
-    print("Error: {} m".format(err))
-    print("Proportional control: {} m/s^2".format(mv_p))
-    print("Integral control: {} m/s^2".format(mv_i))
-    print("Derivative control: {} m/s^2".format(mv_d))
+    print(f"Desired throttle: {desired_accel} m/s^2")
+    print(f"Error: {err} m".format(err))
+    print(f"Proportional control: {mv_p} m/s^2")
+    print(f"Integral control: {mv_i} m/s^2")
+    print(f"Derivative control: {mv_d} m/s^2")
 
     return desired_accel
 

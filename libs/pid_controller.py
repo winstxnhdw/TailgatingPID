@@ -20,8 +20,8 @@ class PIDTracker:
         fx = x + self.wheelbase * np.cos(yaw)
         fy = y + self.wheelbase * np.sin(yaw)
 
-        dx = [fx - icx for icx in path_x] # Find the x-axis of the front axle relative to the path
-        dy = [fy - icy for icy in path_y] # Find the y-axis of the front axle relative to the path
+        dx = fx - path_x    # Find the x-axis of the front axle relative to the path
+        dy = fy - path_y    # Find the y-axis of the front axle relative to the path
 
         d = np.hypot(dx, dy)       # Find the distance from the front axle to the path
         target_idx = np.argmin(d)  # Find the shortest distance in the array
@@ -43,25 +43,23 @@ class PIDTracker:
         
         return self.Kd * (error - previous_error)/self.dt
 
-def pid_control(delta, x, y, yaw, path_x, path_y, path_yaw, prev_heading):
-        
-    tracker = PIDTracker()
+    def heading_control(self, delta, x, y, yaw, path_x, path_y, path_yaw, prev_heading):
+            
+        heading_term = self.target_index_calculator(x, y, yaw, path_x, path_y, path_yaw)
 
-    heading_term = tracker.target_index_calculator(x, y, yaw, path_x, path_y, path_yaw)
+        mv_p = self.proportional_control(heading_term)
+        mv_i = self.integral_control(heading_term)
+        mv_d = self.derivative_control(heading_term, prev_heading)
 
-    mv_p = tracker.proportional_control(heading_term)
-    mv_i = tracker.integral_control(heading_term)
-    mv_d = tracker.derivative_control(heading_term, prev_heading)
+        sigma = delta + mv_p + mv_i + mv_d
 
-    sigma = delta + mv_p + mv_i + mv_d
+        if sigma >= self.steering_limits:
+                sigma = self.steering_limits
 
-    if sigma >= self.steering_limits:
-            sigma = self.steering_limits
+        elif sigma <= -self.steering_limits:
+            sigma = -self.steering_limits
 
-    elif sigma <= -self.steering_limits:
-        sigma = -self.steering_limits
-
-    return sigma
+        return sigma
 
 def main():
 

@@ -1,72 +1,127 @@
-
 import numpy as np
 
 class Description:
 
-    def __init__(self, length, width, rear2wheel, wheel_diameter, wheel_width, tread, wheelbase):
+    def __init__(self, overall_length, overall_width, rear_overhang, tyre_diameter, tyre_width, axle_track, wheelbase):
+        
+        """
+        At initialisation
+        :param overall_length:      (float) vehicle's overall length [m]
+        :param overall_width:       (float) vehicle's overall width [m]
+        :param rear_overhang:       (float) distance between the rear bumper and the rear axle [m]
+        :param tyre_diameter:       (float) vehicle's tyre diameter [m]
+        :param tyre_width:          (float) vehicle's tyre width [m]
+        :param axle_track:          (float) vehicle's axle track [m]
+        :param wheelbase:           (float) vehicle's wheelbase [m]
+        
+        At every time step
+        :param x:                   (float) x-coordinate of the vehicle's rear axle
+        :param y:                   (float) y-coordinate of the vehicle's rear axle
+        :param yaw:                 (float) vehicle's heading [rad]
+        :param steer:               (float) vehicle's steering angle [rad]
+        
+        :return outlines:           (list) vehicle's outlines [x, y]
+        :return fr_wheel:           (list) vehicle's front-right axle [x, y]
+        :return rr_wheel:           (list) vehicle's rear-right axle [x, y]
+        :return fl_wheel:           (list) vehicle's front-left axle [x, y]
+        :return rl_wheel:           (list) vehicle's rear-right axle [x, y]
+        """
 
-        self.length = length
-        self.centre_to_side = width / 2
-        self.rear2wheel = rear2wheel
-        self.wheel_dia = wheel_diameter
-        self.wheel_width = wheel_width
-        self.tread = tread
-        self.wheelbase = wheelbase
+        centre_to_wheel = axle_track / 2
+        centre_to_side = overall_width / 2
+        rear_axle_to_front_bumper = overall_length - rear_overhang
 
-    def plot_car(self, x, y, yaw, steer):
+        vehicle_vertices = np.array([(-rear_overhang,              centre_to_side),
+                                     ( rear_axle_to_front_bumper,  centre_to_side),
+                                     ( rear_axle_to_front_bumper, -centre_to_side),
+                                     (-rear_overhang,             -centre_to_side)])
 
-        outline = np.array([[-self.rear2wheel, (self.length - self.rear2wheel), (self.length - self.rear2wheel), -self.rear2wheel, -self.rear2wheel],
-                            [self.centre_to_side, self.centre_to_side, -self.centre_to_side, -self.centre_to_side, self.centre_to_side]])
+        wheel_vertices = np.array([(-tyre_diameter,  tyre_width - centre_to_wheel),
+                                   ( tyre_diameter,  tyre_width - centre_to_wheel),
+                                   ( tyre_diameter, -tyre_width - centre_to_wheel),
+                                   (-tyre_diameter, -tyre_width - centre_to_wheel)])
 
-        wheel_format = np.array([[self.wheel_dia, -self.wheel_dia, -self.wheel_dia, self.wheel_dia, self.wheel_dia],
-                                [-self.wheel_width - self.tread, -self.wheel_width - self.tread, self.wheel_width - self.tread, self.wheel_width - self.tread, -self.wheel_width - self.tread]])
+        self.outlines = np.concatenate((vehicle_vertices, [vehicle_vertices[0]]))
 
-        fr_wheel = np.copy(wheel_format)
-        rr_wheel = np.copy(wheel_format)
-        fl_wheel = np.copy(wheel_format)
-        fl_wheel[1, :] *= -1
-        rl_wheel = np.copy(rr_wheel)
-        rl_wheel[1, :] *= -1
+        self.wheel_format = np.concatenate((wheel_vertices, [wheel_vertices[0]]))
+        self.rl_wheel = np.array(self.wheel_format, copy=True)
+        self.rl_wheel[:,1] *= -1
+        self.fl_wheel = np.array(self.rl_wheel, copy=True)
+        self.fl_wheel[:, 0] += wheelbase 
+        self.fr_wheel = np.array(self.wheel_format, copy=True)
+        self.fr_wheel[:, 0] += wheelbase
+                                   
+        self.fr_wheel_centre = np.array([(self.fr_wheel[0][0] + self.fr_wheel[2][0]) / 2,
+                                         (self.fr_wheel[0][1] + self.fr_wheel[2][1]) / 2])
 
-        rot1 = np.array([[np.cos(yaw), np.sin(yaw)],
-                        [-np.sin(yaw), np.cos(yaw)]])
-        rot2 = np.array([[np.cos(steer), np.sin(steer)],
-                        [-np.sin(steer), np.cos(steer)]])
+        self.fl_wheel_centre = np.array([(self.fl_wheel[0][0] + self.fl_wheel[2][0]) / 2,
+                                         (self.fl_wheel[0][1] + self.fl_wheel[2][1]) / 2])
 
-        fr_wheel = (fr_wheel.T.dot(rot2)).T
-        fl_wheel = (fl_wheel.T.dot(rot2)).T
-        fr_wheel[0, :] += self.wheelbase
-        fl_wheel[0, :] += self.wheelbase
+    def get_rotation_matrix(self, angle):
 
-        fr_wheel = (fr_wheel.T.dot(rot1)).T
-        fl_wheel = (fl_wheel.T.dot(rot1)).T
+        return np.array([( np.cos(angle), np.sin(angle)),
+                         (-np.sin(angle), np.cos(angle))])
 
-        outline = (outline.T.dot(rot1)).T
-        rr_wheel = (rr_wheel.T.dot(rot1)).T
-        rl_wheel = (rl_wheel.T.dot(rot1)).T
+    def transform(self, point, x, y, angle_vector):
 
-        outline[0, :] += x
-        outline[1, :] += y
-        fr_wheel[0, :] += x
-        fr_wheel[1, :] += y
-        rr_wheel[0, :] += x
-        rr_wheel[1, :] += y
-        fl_wheel[0, :] += x
-        fl_wheel[1, :] += y
-        rl_wheel[0, :] += x
-        rl_wheel[1, :] += y
+        # Rotational transform
+        point = point.dot(angle_vector).T
 
-        outline_plot = (np.array(outline[0, :]).flatten(), np.array(outline[1, :]).flatten())
-        fr_plot = (np.array(fr_wheel[0, :]).flatten(), np.array(fr_wheel[1, :]).flatten())
-        rr_plot = (np.array(rr_wheel[0, :]).flatten(), np.array(rr_wheel[1, :]).flatten())
-        fl_plot = (np.array(fl_wheel[0, :]).flatten(), np.array(fl_wheel[1, :]).flatten())
-        rl_plot = (np.array(rl_wheel[0, :]).flatten(), np.array(rl_wheel[1, :]).flatten())
+        # Position translation
+        point[0,:] += x
+        point[1,:] += y
+        
+        return point
 
-        return outline_plot, fr_plot, rr_plot, fl_plot, rl_plot
+    def plot_car(self, x, y, yaw, steer=0.0):
+
+        # Rotation matrices
+        yaw_vector   = self.get_rotation_matrix(yaw)
+        steer_vector = self.get_rotation_matrix(steer)
+
+        fr_wheel = np.array(self.fr_wheel, copy=True)
+        fl_wheel = np.array(self.fl_wheel, copy=True)
+
+        # Rotate the wheels about its position
+        fr_wheel -= self.fr_wheel_centre
+        fl_wheel -= self.fl_wheel_centre
+        fr_wheel  = fr_wheel.dot(steer_vector)
+        fl_wheel  = fl_wheel.dot(steer_vector)
+        fr_wheel += self.fr_wheel_centre
+        fl_wheel += self.fl_wheel_centre
+
+        outlines = self.transform(self.outlines, x, y, yaw_vector)
+        fr_wheel = self.transform(fr_wheel, x, y, yaw_vector)
+        fl_wheel = self.transform(fl_wheel, x, y, yaw_vector)
+        rr_wheel = self.transform(self.wheel_format, x, y, yaw_vector)
+        rl_wheel = self.transform(self.rl_wheel, x, y, yaw_vector)
+
+        return outlines, fr_wheel, rr_wheel, fl_wheel, rl_wheel
 
 def main():
 
-    print("This script is not meant to be executable, and should be used as a library.")
+    from matplotlib import pyplot as plt
+
+    # Based on Tesla's model S 100D (https://www.car.info/en-se/tesla/model-s/model-s-100-kwh-awd-16457112/specs)
+    overall_length = 4.97
+    overall_width = 1.964
+    tyre_diameter = 0.4826
+    tyre_width = 0.2032
+    axle_track = 1.662
+    wheelbase = 2.96
+    rear_overhang = (overall_length - wheelbase) / 2
+    colour = 'black'
+
+    desc = Description(overall_length, overall_width, rear_overhang, tyre_diameter, tyre_width, axle_track, wheelbase)
+    desc_plots = desc.plot_car(30.0, -10.0, np.pi/4, np.deg2rad(25))
+    
+    ax = plt.axes()
+    ax.set_aspect('equal')
+
+    for desc_plot in desc_plots:
+        ax.plot(*desc_plot, color=colour)
+
+    plt.show()
 
 if __name__ == '__main__':
     main()
