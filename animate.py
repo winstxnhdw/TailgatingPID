@@ -1,10 +1,10 @@
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 
-from velocity_control import velocity_control
-from scipy import signal
+from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
+from scipy import signal
+from velocity_control import velocity_control
 from libs.stanley_controller import StanleyController
 from libs.car_description import Description
 from libs.kinematic_model import KinematicBicycleModel
@@ -80,6 +80,18 @@ class TargetCar(Car):
         self.x, self.y, self.yaw, self.velocity, self.delta, self.omega = self.kbm.kinematic_model(self.x, self.y, self.yaw, self.velocity, self.throttle, self.delta)
         self.prev_delta = self.delta
 
+    def behaviour(self, behaviour):
+
+        if behaviour == 'police chase':
+            return 20 * (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1)
+
+        elif behaviour == 'girlfriend':
+            return 20 * np.flip(signal.sawtooth(2*np.pi*5*path.px, 0.5))
+
+        else:
+            raise Exception("No such behaviour setting.")
+
+
 class TailgatingCar(Car):
 
     def __init__(self, init_x, init_y, init_yaw, sim_params, path_params):
@@ -144,23 +156,20 @@ def main():
     rear_axle, = ax[0].plot(tailgate.x, tailgate.y, '+', color='black', markersize=2)
 
     # Target settings
-    annotation_target = ax[0].annotate(f'{target.velocity:.2f}', xy=(target.x, target.y + 5), color='black', annotation_clip=False)
     target_color = target.colour
+    target_vel = target.behaviour("police chase")
     outline_t, = ax[0].plot([], [], color=target_color)
     fr_t, = ax[0].plot([], [], color=target_color)
     rr_t, = ax[0].plot([], [], color=target_color)
     fl_t, = ax[0].plot([], [], color=target_color)
     rl_t, = ax[0].plot([], [], color=target_color)
     rear_axle_t, = ax[0].plot(tailgate.x, tailgate.y, '+', color='black', markersize=2)
-
-    # Behaviour settings
-    target_vel = (np.abs(signal.sawtooth(2*np.pi*5*path.px, 0.5)) + 1) * 20
-    # target_vel = np.flip(signal.sawtooth(2*np.pi*5*path.px, 0.5))*20
+    annotation_target = ax[0].annotate(f'{target.velocity:.2f}', xy=(target.x, target.y + 5), color='black', annotation_clip=False)
 
     # Graph settings
     ax[1].axhline(tailgate.safety_thresh, color='red')
-    gap_data, = ax[1].plot([], [])
     ax[1].set_xlim(0, sim.frames)
+    gap_data, = ax[1].plot([], [])
     gap_arr = []
     frames = []
 
