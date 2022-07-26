@@ -1,4 +1,8 @@
 # TailgatingPID
+
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/winstxnhdw/TailgatingPID.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/winstxnhdw/TailgatingPID/alerts/)
+<a href="https://lgtm.com/projects/g/winstxnhdw/TailgatingPID/alerts/"><img alt="Total alerts" src="https://img.shields.io/lgtm/alerts/g/winstxnhdw/TailgatingPID.svg?logo=lgtm&logoWidth=18"/></a>
+
 Experimental velocity control based on a simple PID controller. The line plot illustrates the change in distance between the two vehicles in every frame. The following two animations are the simulated experiments.
 
 ```yaml
